@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   AppBar,
@@ -52,7 +52,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useThemeMode } from "../../context/ThemeContext";
 import { TranscriptionIndicator } from "../transcription/TranscriptionIndicator";
 import { startTranscriptionRunner, stopTranscriptionRunner } from "../../asr/runner";
-import { QuickCapture } from "../tasks/QuickCapture";
+import { QuickCapture, type QuickCaptureHandle } from "../tasks/QuickCapture";
 import { PomodoroWidget } from "../../pomodoro/PomodoroWidget";
 
 const DRAWER_WIDTH = 240;
@@ -84,6 +84,13 @@ export function AppShell() {
   const location = useLocation();
   const { mode, toggle: toggleTheme } = useThemeMode();
   const [captureOpen, setCaptureOpen] = useState(false);
+  const captureRef = useRef<QuickCaptureHandle>(null);
+  /** Schließt die Erfassung – ein noch getippter Gedanke wird vorher übernommen. */
+  const finishCapture = async (then?: () => void) => {
+    await captureRef.current?.flush();
+    setCaptureOpen(false);
+    then?.();
+  };
   const [capturedCount, setCapturedCount] = useState(0);
 
   useEffect(() => {
@@ -272,12 +279,12 @@ export function AppShell() {
         </Box>
       </Box>
 
-      <Dialog open={captureOpen} onClose={() => setCaptureOpen(false)} fullWidth maxWidth="sm"
+      <Dialog open={captureOpen} onClose={() => void finishCapture()} fullWidth maxWidth="sm"
         sx={{ "& .MuiDialog-container": { alignItems: "flex-start" } }}>
         <DialogTitle>Gedanken erfassen</DialogTitle>
         <DialogContent>
           <Box pt={1}>
-            <QuickCapture autoFocus onCaptured={() => setCapturedCount((n) => n + 1)} />
+            <QuickCapture ref={captureRef} autoFocus onCaptured={() => setCapturedCount((n) => n + 1)} />
           </Box>
           <Typography variant="body2" color="text.secondary" mt={1.5}>
             {capturedCount > 0
@@ -287,9 +294,9 @@ export function AppShell() {
         </DialogContent>
         <DialogActions>
           {capturedCount > 0 && (
-            <Button onClick={() => { setCaptureOpen(false); navigate("/gtd?tab=inbox"); }}>Zum Eingangskorb</Button>
+            <Button onClick={() => void finishCapture(() => navigate("/gtd?tab=inbox"))}>Zum Eingangskorb</Button>
           )}
-          <Button onClick={() => setCaptureOpen(false)}>Fertig</Button>
+          <Button variant="contained" onClick={() => void finishCapture()}>Fertig</Button>
         </DialogActions>
       </Dialog>
     </Box>
