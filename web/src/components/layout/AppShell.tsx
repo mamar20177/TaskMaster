@@ -282,7 +282,7 @@ export function AppShell() {
           <Typography variant="body2" color="text.secondary" mt={1.5}>
             {capturedCount > 0
               ? `${capturedCount} Gedanke(n) im Eingangskorb – geklärt wird später.`
-              : "Einfach tippen und Enter – mehrere hintereinander gehen auch."}
+              : "Einfach tippen und Enter – mehrere hintereinander gehen auch. Eine eingefügte Liste wird pro Zeile ein eigener Eintrag."}
           </Typography>
         </DialogContent>
         <DialogActions>
